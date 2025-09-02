@@ -148,6 +148,7 @@ func (a *App) refresh() {
 			a.infoBar.UpdateBasicInfo(a.ctx.PID, a.ctx.FullVersion, a.ctx.ExePath)
 			a.infoBar.UpdateStatus(a.ctx.Status)
 			a.infoBar.UpdateDataKey(a.ctx.DataKey)
+			a.infoBar.UpdateImageKey(a.ctx.ImgKey)
 			a.infoBar.UpdatePlatform(a.ctx.Platform)
 			a.infoBar.UpdateDataUsageDir(a.ctx.DataUsage, a.ctx.DataDir)
 			a.infoBar.UpdateWorkUsageDir(a.ctx.WorkUsage, a.ctx.WorkDir)
@@ -201,14 +202,14 @@ func (a *App) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 func (a *App) initMenu() {
 	getDataKey := &menu.Item{
 		Index:       2,
-		Name:        "获取数据密钥",
-		Description: "从进程获取数据密钥",
+		Name:        "获取密钥",
+		Description: "从进程获取数据密钥 & 图片密钥",
 		Selected: func(i *menu.Item) {
 			modal := tview.NewModal()
 			if runtime.GOOS == "darwin" {
-				modal.SetText("获取数据密钥中...\n预计需要 20 秒左右的时间，期间微信会卡住，请耐心等待")
+				modal.SetText("获取密钥中...\n预计需要 20 秒左右的时间，期间微信会卡住，请耐心等待")
 			} else {
-				modal.SetText("获取数据密钥中...")
+				modal.SetText("获取密钥中...")
 			}
 			a.mainPages.AddPage("modal", modal, true, true)
 			a.SetFocus(modal)
@@ -220,10 +221,10 @@ func (a *App) initMenu() {
 				a.QueueUpdateDraw(func() {
 					if err != nil {
 						// 解密失败
-						modal.SetText("获取数据密钥失败: " + err.Error())
+						modal.SetText("获取密钥失败: " + err.Error())
 					} else {
 						// 解密成功
-						modal.SetText("获取数据密钥成功")
+						modal.SetText("获取密钥成功")
 					}
 
 					// 添加确认按钮
@@ -484,6 +485,11 @@ func (a *App) settingSelected(i *menu.Item) {
 			action:      a.settingDataKey,
 		},
 		{
+			name:        "设置图片密钥",
+			description: "配置图片解密密钥",
+			action:      a.settingImgKey,
+		},
+		{
 			name:        "设置数据目录",
 			description: "配置微信数据文件所在目录",
 			action:      a.settingDataDir,
@@ -583,6 +589,30 @@ func (a *App) settingDataKey() {
 		a.ctx.DataKey = tempDataKey // 设置数据密钥
 		a.mainPages.RemovePage("submenu2")
 		a.showInfo("数据密钥已设置")
+	})
+
+	formView.AddButton("取消", func() {
+		a.mainPages.RemovePage("submenu2")
+	})
+
+	a.mainPages.AddPage("submenu2", formView, true, true)
+	a.SetFocus(formView)
+}
+
+// settingImgKey 设置图片密钥 (ImgKey)
+func (a *App) settingImgKey() {
+	formView := form.NewForm("设置图片密钥")
+
+	tempImgKey := a.ctx.ImgKey
+
+	formView.AddInputField("图片密钥", tempImgKey, 0, nil, func(text string) {
+		tempImgKey = text
+	})
+
+	formView.AddButton("保存", func() {
+		a.ctx.SetImgKey(tempImgKey)
+		a.mainPages.RemovePage("submenu2")
+		a.showInfo("图片密钥已设置")
 	})
 
 	formView.AddButton("取消", func() {

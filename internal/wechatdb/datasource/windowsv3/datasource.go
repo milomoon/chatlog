@@ -56,7 +56,7 @@ var Groups = []*dbm.Group{
 	},
 	{
 		Name:      Voice,
-		Pattern:   `^MediaMSG([0-9])?\.db$`,
+		Pattern:   `^MediaMSG([0-9]?[0-9])?\.db$`,
 		BlackList: []string{},
 	},
 }
@@ -111,11 +111,11 @@ func New(path string) (*DataSource, error) {
 	return ds, nil
 }
 
-func (ds *DataSource) SetCallback(name string, callback func(event fsnotify.Event) error) error {
-	if name == "chatroom" {
-		name = Contact
+func (ds *DataSource) SetCallback(group string, callback func(event fsnotify.Event) error) error {
+	if group == "chatroom" {
+		group = Contact
 	}
-	return ds.dbm.AddCallback(name, callback)
+	return ds.dbm.AddCallback(group, callback)
 }
 
 // initMessageDbs 初始化消息数据库
@@ -206,6 +206,10 @@ func (ds *DataSource) initMessageDbs() error {
 		} else {
 			infos[i].EndTime = infos[i+1].StartTime
 		}
+	}
+	if len(ds.messageInfos) > 0 && len(infos) < len(ds.messageInfos) {
+		log.Warn().Msgf("message db count decreased from %d to %d, skip init", len(ds.messageInfos), len(infos))
+		return nil
 	}
 	ds.messageInfos = infos
 	return nil
